@@ -8,45 +8,45 @@ let auth, db;
 if (configured) {
   const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
   onAuthStateChanged(auth, user => { if(user) enterApp(user); else showAuth(); });
-} else {
-  setStatus("Firebase setup needed: add your Web App config in firebase-config.js.");
-}
+} else setStatus("Firebase setup needed: add your Web App config in firebase-config.js.");
 let mode="login", posts=JSON.parse(localStorage.getItem("gg_posts")||"null")||[
  {user:"Ayaan Ghost",caption:"Living in my own world 👻",img:"",likes:1250},
  {user:"Zoya",caption:"Green lights, calm nights 💚",img:"",likes:842}
 ], photoData="";
 const $=id=>document.getElementById(id);
 function setStatus(t, error=false){$("authStatus").textContent=t;$("authStatus").className="status "+(error?"error":"")}
-window.setAuthMode=(m)=>{mode=m;$("loginTab").classList.toggle("selected",m==="login");$("signupTab").classList.toggle("selected",m==="signup");$("emailWrap").hidden=m!=="signup";$("usernameWrap").hidden=m!=="signup";$("usernameLabel").textContent=m==="login"?"Username or email":"Email address";$("identity").placeholder=m==="login"?"Enter username or email":"Email address";$("identity").type=m==="login"?"text":"email";$("submitAuth").textContent=m==="login"?"Log in":"Create account";$("password").autocomplete=m==="login"?"current-password":"new-password";setStatus("");};
+function authAlias(username){return `${username.toLowerCase()}@ghostgram.invalid`}
+window.setAuthMode=(m)=>{mode=m;$("loginTab").classList.toggle("selected",m==="login");$("signupTab").classList.toggle("selected",m==="signup");$("emailWrap").hidden=m!=="signup";$("identityWrap").hidden=m==="signup";$("usernameWrap").hidden=m!=="signup";$("confirmWrap").hidden=m!=="signup";$("usernameLabel").textContent="Username";$("identity").placeholder="Enter your username";$("identity").type="text";$("submitAuth").textContent=m==="login"?"Log in":"Create account";$("password").autocomplete=m==="login"?"current-password":"new-password";$("resetButton").hidden=m==="signup";setStatus("")};
 $("authForm").addEventListener("submit",async e=>{e.preventDefault();if(!configured){setStatus("First finish Firebase setup using SETUP.txt.",true);return}
- const identity=$("identity").value.trim(), pass=$("password").value;
+ const identity=$("identity").value.trim().toLowerCase(), pass=$("password").value;
  try{
   $("submitAuth").disabled=true;
   if(mode==="signup"){
-   const email=identity, uname=$("newUsername").value.trim().toLowerCase();
+   const uname=$("newUsername").value.trim().toLowerCase(), email=$("email").value.trim().toLowerCase(), confirm=$("confirmPassword").value;
    if(!/^[a-z0-9_]{3,20}$/.test(uname))throw Error("Username must be 3–20 characters: letters, numbers or underscore.");
+   if(pass.length<6)throw Error("Password must be at least 6 characters.");
+   if(pass!==confirm)throw Error("Passwords do not match.");
    const ref=doc(db,"usernames",uname);if((await getDoc(ref)).exists())throw Error("That username is already taken.");
-   const cred=await createUserWithEmailAndPassword(auth,email,pass);
+   const cred=await createUserWithEmailAndPassword(auth,authAlias(uname),pass);
    await updateProfile(cred.user,{displayName:uname});
-   await setDoc(doc(db,"users",cred.user.uid),{username:uname,email,createdAt:serverTimestamp()});
-   await setDoc(ref,{uid:cred.user.uid,email});
+   await setDoc(doc(db,"users",cred.user.uid),{username:uname,recoveryEmail:email||null,createdAt:serverTimestamp()});
+   await setDoc(ref,{uid:cred.user.uid,loginEmail:authAlias(uname)});
    enterApp(cred.user);
   }else{
-   let email=identity;
-   if(!identity.includes("@")){
-    const snap=await getDoc(doc(db,"usernames",identity.toLowerCase()));
-    if(!snap.exists())throw Error("Username not found. Check it or use your email.");
-    email=snap.data().email;
-   }
-   const cred=await signInWithEmailAndPassword(auth,email,pass);enterApp(cred.user);
+   if(!/^[a-z0-9_]{3,20}$/.test(identity))throw Error("Enter your GhostGram username.");
+   const snap=await getDoc(doc(db,"usernames",identity));
+   if(!snap.exists())throw Error("Username not found. Check your spelling.");
+   const loginEmail=snap.data().loginEmail;
+   if(!loginEmail)throw Error("This is an older account. Please use its original email address.");
+   const cred=await signInWithEmailAndPassword(auth,loginEmail,pass);enterApp(cred.user);
   }
  }catch(err){setStatus(friendly(err),true)}finally{$("submitAuth").disabled=false}
 });
-window.resetPassword=async()=>{if(!configured){setStatus("Finish Firebase setup first.",true);return}const email=$("identity").value.trim();if(!email.includes("@")){setStatus("Enter your account email in the first field to reset password.",true);return}try{await sendPasswordResetEmail(auth,email);setStatus("Password reset email sent. Check your inbox.");}catch(e){setStatus(friendly(e),true)}};
-window.googleSignIn=async()=>{if(!configured){setStatus("Finish Firebase setup first.",true);return}try{const p=new GoogleAuthProvider();const r=await signInWithPopup(auth,p);const ref=doc(db,"users",r.user.uid);if(!(await getDoc(ref)).exists())await setDoc(ref,{username:(r.user.displayName||"ghost").toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,18)+"_"+r.user.uid.slice(0,4),email:r.user.email,createdAt:serverTimestamp()});enterApp(r.user)}catch(e){setStatus(friendly(e),true)}};
-function friendly(e){const c=e.code||"";if(c.includes("email-already-in-use"))return"Email already registered. Please log in.";if(c.includes("weak-password"))return"Use a password with at least 6 characters.";if(c.includes("invalid-credential"))return"Incorrect username/email or password.";if(c.includes("popup"))return"Google sign-in popup was blocked. Allow popups and try again.";return e.message||"Something went wrong."}
+window.resetPassword=async()=>{setStatus("Email-free accounts cannot use email password reset. Keep your password safe.",true)};
+window.googleSignIn=async()=>{if(!configured){setStatus("Finish Firebase setup first.",true);return}try{const p=new GoogleAuthProvider();const r=await signInWithPopup(auth,p);const ref=doc(db,"users",r.user.uid);if(!(await getDoc(ref)).exists()){const uname=(r.user.displayName||"ghost").toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,14)+"_"+r.user.uid.slice(0,4);await setDoc(ref,{username:uname,recoveryEmail:r.user.email,createdAt:serverTimestamp()});await setDoc(doc(db,"usernames",uname),{uid:r.user.uid,loginEmail:r.user.email})}enterApp(r.user)}catch(e){setStatus(friendly(e),true)}};
+function friendly(e){const c=e.code||"";if(c.includes("email-already-in-use"))return"That username is already registered. Please log in.";if(c.includes("weak-password"))return"Use a password with at least 6 characters.";if(c.includes("invalid-credential"))return"Incorrect username or password.";if(c.includes("popup"))return"Google sign-in popup was blocked. Allow popups and try again.";if(c.includes("permission-denied"))return"Firestore rules need updating. Follow the new rules in SETUP.txt.";return e.message||"Something went wrong."}
 function showAuth(){$("auth").hidden=false;$("app").hidden=true}
-function enterApp(user){$("auth").hidden=true;$("app").hidden=false;$("profileName").textContent=user.displayName||"GhostGram user";$("profileEmail").textContent=user.email||"";$("displayName").value=user.displayName||"";renderStories();renderFeed();show("home")}
+function enterApp(user){$("auth").hidden=true;$("app").hidden=false;$("profileName").textContent=user.displayName||"GhostGram user";$("profileEmail").textContent=user.email?.endsWith("@ghostgram.invalid")?"@"+(user.displayName||"ghost"):user.email||"";$("displayName").value=user.displayName||"";renderStories();renderFeed();show("home")}
 window.logout=async()=>{if(auth)await signOut(auth);showAuth()};
 window.show=id=>{document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));if(id==="profile")renderProfile();if(id==="home")renderFeed();window.scrollTo(0,0)};
 window.toast=t=>{const e=$("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2200)};
