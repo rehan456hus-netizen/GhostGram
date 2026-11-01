@@ -16,8 +16,31 @@ let mode="login", posts=JSON.parse(localStorage.getItem("gg_posts")||"null")||[
 const $=id=>document.getElementById(id);
 function setStatus(t, error=false){$("authStatus").textContent=t;$("authStatus").className="status "+(error?"error":"")}
 function authAlias(username){return `${username.toLowerCase()}@ghostgram.invalid`}
-window.setAuthMode=(m)=>{mode=m;$("loginTab").classList.toggle("selected",m==="login");$("signupTab").classList.toggle("selected",m==="signup");$("emailWrap").hidden=m!=="signup";$("identityWrap").hidden=m==="signup";$("usernameWrap").hidden=m!=="signup";$("confirmWrap").hidden=m!=="signup";$("usernameLabel").textContent="Username";$("identity").placeholder="Enter your username";$("identity").type="text";$("submitAuth").textContent=m==="login"?"Log in":"Create account";$("password").autocomplete=m==="login"?"current-password":"new-password";$("resetButton").hidden=m==="signup";setStatus("")};
-$("authForm").addEventListener("submit",async e=>{e.preventDefault();if(!configured){setStatus("First finish Firebase setup using SETUP.txt.",true);return}
+
+window.setAuthMode=(m)=>{
+  mode=m;
+  $("loginTab").classList.toggle("selected",m==="login");
+  $("signupTab").classList.toggle("selected",m==="signup");
+
+  $("emailWrap").hidden=m!=="signup";
+  $("identityWrap").hidden=m==="signup";
+  $("usernameWrap").hidden=m!=="signup";
+  $("confirmWrap").hidden=m!=="signup";
+
+  $("identity").required=m==="login";
+  $("newUsername").required=m==="signup";
+  $("confirmPassword").required=m==="signup";
+  $("password").required=true;
+
+  $("usernameLabel").textContent="Username";
+  $("identity").placeholder="Enter your username";
+  $("identity").type="text";
+  $("submitAuth").textContent=m==="login"?"Log in":"Create account";
+  $("password").autocomplete=m==="login"?"current-password":"new-password";
+  $("resetButton").hidden=m==="signup";
+
+  setStatus("");
+};
  const identity=$("identity").value.trim().toLowerCase(), pass=$("password").value;
  try{
   $("submitAuth").disabled=true;
