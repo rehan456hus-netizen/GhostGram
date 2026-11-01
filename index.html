@@ -14,13 +14,14 @@
   <p class="muted">Your world. Your ghost.</p>
   <div class="auth-tabs"><button id="loginTab" class="selected" onclick="setAuthMode('login')">Log in</button><button id="signupTab" onclick="setAuthMode('signup')">Sign up</button></div>
   <form id="authForm">
-    <label id="usernameLabel">Username or email</label><input id="identity" autocomplete="username" placeholder="Enter username or email" required>
-    <div id="emailWrap" hidden><label>Email address</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div id="identityWrap"><label id="usernameLabel">Username</label><input id="identity" autocomplete="username" placeholder="Enter your username" required></div>
+    <div id="emailWrap" hidden><label>Recovery email (optional)</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
     <div id="usernameWrap" hidden><label>Choose a username</label><input id="newUsername" autocomplete="username" minlength="3" maxlength="20" placeholder="e.g. ghost_rehan"></div>
     <label>Password</label><input id="password" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required>
+    <div id="confirmWrap" hidden><label>Confirm password</label><input id="confirmPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Re-enter password"></div>
     <button class="primary" id="submitAuth" type="submit">Log in</button>
   </form>
-  <button class="text-button" onclick="resetPassword()">Forgot password?</button>
+  <button id="resetButton" class="text-button" onclick="resetPassword()">Forgot password?</button>
   <div class="or"><span>OR</span></div>
   <button class="google" onclick="googleSignIn()">◎ Continue with Google</button>
   <p id="authStatus" class="status" role="status"></p>
