@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101510"><meta name="description" content="GhostGram — your world, your ghost.">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="ghost.svg"><link rel="stylesheet" href="style.css">
+<title>GhostGram</title>
+</head>
+<body>
+<header class="top"><div class="brand"><div class="ghost">👻</div><div><b>GHOSTGRAM</b><small>YOUR WORLD. YOUR GHOST.</small></div></div><div class="top-actions"><button onclick="toast('Notifications will be available after the feed backend is connected')">♡</button></div></header>
+<main>
+<section id="auth" class="auth-card">
+  <div class="auth-logo">👻</div><h1>Welcome to <span>GhostGram</span></h1>
+  <p class="muted">Your world. Your ghost.</p>
+  <div class="auth-tabs"><button id="loginTab" class="selected" onclick="setAuthMode('login')">Log in</button><button id="signupTab" onclick="setAuthMode('signup')">Sign up</button></div>
+  <form id="authForm">
+    <label id="usernameLabel">Username or email</label><input id="identity" autocomplete="username" placeholder="Enter username or email" required>
+    <div id="emailWrap" hidden><label>Email address</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div id="usernameWrap" hidden><label>Choose a username</label><input id="newUsername" autocomplete="username" minlength="3" maxlength="20" placeholder="e.g. ghost_rehan"></div>
+    <label>Password</label><input id="password" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required>
+    <button class="primary" id="submitAuth" type="submit">Log in</button>
+  </form>
+  <button class="text-button" onclick="resetPassword()">Forgot password?</button>
+  <div class="or"><span>OR</span></div>
+  <button class="google" onclick="googleSignIn()">◎ Continue with Google</button>
+  <p id="authStatus" class="status" role="status"></p>
+  <p class="tiny">By continuing, you agree to use GhostGram respectfully. Never share your password or verification codes.</p>
+</section>
+<section id="app" hidden>
+<nav class="tabs">
+<button class="active" data-page="home" onclick="show('home')">⌂ <span>Home</span></button><button data-page="search" onclick="show('search')">⌕ <span>Explore</span></button><button data-page="create" onclick="show('create')">＋ <span>Create</span></button><button data-page="reels" onclick="show('reels')">▣ <span>Reels</span></button><button data-page="profile" onclick="show('profile')">◉ <span>Profile</span></button>
+</nav>
+<section id="home" class="page active"><div class="section-head"><h2>Stories</h2><span class="green">GHOSTGRAM</span></div><div class="stories" id="stories"></div><div id="feed"></div></section>
+<section id="search" class="page"><h2>Explore</h2><input id="searchBox" placeholder="Search demo posts..." oninput="searchPosts(this.value)"><div id="searchResults" class="muted">Search captions in your demo feed.</div></section>
+<section id="create" class="page"><h2>Create a post</h2><label class="upload">＋ <span>Select a photo</span><input id="photo" type="file" accept="image/*" hidden onchange="previewPhoto(event)"></label><img id="preview" class="preview" hidden><textarea id="caption" placeholder="What's on your mind?"></textarea><button class="primary" onclick="createPost()">Share post</button><p class="muted">Cloud post uploads are not connected yet.</p></section>
+<section id="reels" class="page"><h2>Ghost Reels</h2><div class="reel"><div class="reel-mark">👻</div><b>YOUR NEXT REEL STARTS HERE</b><p>Video hosting will be added with Firebase Storage.</p></div></section>
+<section id="profile" class="page"><div class="profile-head"><div class="avatar big">G</div><div><h2 id="profileName">Your profile</h2><span class="muted" id="profileEmail"></span></div></div><div class="stats"><div><b id="postCount">0</b><span>Posts</span></div><div><b>0</b><span>Followers</span></div><div><b>0</b><span>Following</span></div></div><input id="displayName" placeholder="Display name"><button class="primary" onclick="saveProfile()">Save profile</button><button class="logout" onclick="logout()">Log out</button><h3>Your posts</h3><div id="myPosts"></div></section>
+</section>
+</main><div id="toast" role="status"></div>
+<script type="module" src="app.js"></script>
+</body></html>
