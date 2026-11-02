@@ -1,41 +1,31 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101510"><meta name="description" content="GhostGram — your world, your ghost.">
-<link rel="manifest" href="manifest.json"><link rel="icon" href="ghost.svg"><link rel="stylesheet" href="style.css">
-<title>GhostGram</title>
-</head>
-<body>
-<header class="top"><div class="brand"><div class="ghost">👻</div><div><b>GHOSTGRAM</b><small>YOUR WORLD. YOUR GHOST.</small></div></div><div class="top-actions"><button onclick="toast('Notifications will be available after the feed backend is connected')">♡</button></div></header>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101710"><meta name="description" content="GhostGram — your world, your ghost.">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="ghost.svg"><link rel="stylesheet" href="style.css"><title>GhostGram</title>
+</head><body>
+<header class="top"><div class="brand"><div class="ghost">👻</div><div><b>GHOSTGRAM</b><small>YOUR WORLD. YOUR GHOST.</small></div></div><button class="heart" type="button" onclick="toast('Notifications coming soon')">♡</button></header>
 <main>
-<section id="auth" class="auth-card">
-  <div class="auth-logo">👻</div><h1>Welcome to <span>GhostGram</span></h1>
-  <p class="muted">Your world. Your ghost.</p>
-  <div class="auth-tabs"><button id="loginTab" class="selected" onclick="setAuthMode('login')">Log in</button><button id="signupTab" onclick="setAuthMode('signup')">Sign up</button></div>
-  <form id="authForm">
-    <label id="usernameLabel">Username or email</label><input id="identity" autocomplete="username" placeholder="Enter username or email" required>
-    <div id="emailWrap" hidden><label>Email address</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
-    <div id="usernameWrap" hidden><label>Choose a username</label><input id="newUsername" autocomplete="username" minlength="3" maxlength="20" placeholder="e.g. ghost_rehan"></div>
-    <label>Password</label><input id="password" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required>
-    <button class="primary" id="submitAuth" type="submit">Log in</button>
-  </form>
-  <button class="text-button" onclick="resetPassword()">Forgot password?</button>
-  <div class="or"><span>OR</span></div>
-  <button class="google" onclick="googleSignIn()">◎ Continue with Google</button>
-  <p id="authStatus" class="status" role="status"></p>
-  <p class="tiny">By continuing, you agree to use GhostGram respectfully. Never share your password or verification codes.</p>
-</section>
+<section id="auth" class="auth-screen"><div class="auth-card">
+<div class="robot-scene" aria-hidden="true"><div class="halo"></div><div class="robot"><div class="ear left"></div><div class="ear right"></div><div class="face"><i class="eye one"></i><i class="eye two"></i><i class="mouth"></i></div><div class="neck"></div><div class="shoulders"></div></div><span class="spark a">✦</span><span class="spark b">✧</span></div>
+<div class="auth-panel"><div class="heading"><small>✦ YOUR WORLD. YOUR GHOST. ✦</small><h1 id="authTitle">Welcome back</h1><p id="authSubtitle">Log in and enter your world.</p></div>
+<div class="auth-tabs"><button type="button" id="loginTab" class="selected" onclick="setAuthMode('login')">LOG IN</button><button type="button" id="signupTab" onclick="setAuthMode('signup')">SIGN UP</button></div>
+<form id="authForm">
+<div id="identityWrap" class="field"><label id="usernameLabel" for="identity">USERNAME</label><input id="identity" autocomplete="username" placeholder="Enter your username" required></div>
+<div id="emailWrap" class="field" hidden><label for="email">RECOVERY EMAIL (OPTIONAL)</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+<div id="usernameWrap" class="field" hidden><label for="newUsername">CREATE USERNAME</label><input id="newUsername" autocomplete="username" minlength="3" maxlength="20" placeholder="e.g. ghost_user"></div>
+<div class="field"><label for="password">PASSWORD</label><input id="password" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required></div>
+<div id="confirmWrap" class="field" hidden><label for="confirmPassword">CONFIRM PASSWORD</label><input id="confirmPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Re-enter password"></div>
+<button class="primary" id="submitAuth" type="submit">LOG IN NOW</button></form>
+<button type="button" id="resetButton" class="text-button" onclick="resetPassword()">Forgot password?</button>
+<div class="or"><span>OR CONTINUE WITH</span></div><button type="button" class="google" onclick="googleSignIn()"><b class="gmark">G</b> Continue with Google</button>
+<p id="authStatus" class="status" role="status"></p><p class="tiny">Never share your password or verification codes.</p></div></div></section>
 <section id="app" hidden>
-<nav class="tabs">
-<button class="active" data-page="home" onclick="show('home')">⌂ <span>Home</span></button><button data-page="search" onclick="show('search')">⌕ <span>Explore</span></button><button data-page="create" onclick="show('create')">＋ <span>Create</span></button><button data-page="reels" onclick="show('reels')">▣ <span>Reels</span></button><button data-page="profile" onclick="show('profile')">◉ <span>Profile</span></button>
-</nav>
+<nav class="tabs"><button type="button" class="active" data-page="home" onclick="show('home')">⌂ <span>Home</span></button><button type="button" data-page="search" onclick="show('search')">⌕ <span>Explore</span></button><button type="button" data-page="create" onclick="show('create')">＋ <span>Create</span></button><button type="button" data-page="reels" onclick="show('reels')">▣ <span>Reels</span></button><button type="button" data-page="profile" onclick="show('profile')">◉ <span>Profile</span></button></nav>
 <section id="home" class="page active"><div class="section-head"><h2>Stories</h2><span class="green">GHOSTGRAM</span></div><div class="stories" id="stories"></div><div id="feed"></div></section>
 <section id="search" class="page"><h2>Explore</h2><input id="searchBox" placeholder="Search demo posts..." oninput="searchPosts(this.value)"><div id="searchResults" class="muted">Search captions in your demo feed.</div></section>
-<section id="create" class="page"><h2>Create a post</h2><label class="upload">＋ <span>Select a photo</span><input id="photo" type="file" accept="image/*" hidden onchange="previewPhoto(event)"></label><img id="preview" class="preview" hidden><textarea id="caption" placeholder="What's on your mind?"></textarea><button class="primary" onclick="createPost()">Share post</button><p class="muted">Cloud post uploads are not connected yet.</p></section>
+<section id="create" class="page"><h2>Create a post</h2><label class="upload">＋ <span>Select a photo</span><input id="photo" type="file" accept="image/*" hidden onchange="previewPhoto(event)"></label><img id="preview" class="preview" hidden alt="Photo preview"><textarea id="caption" placeholder="What's on your mind?"></textarea><button type="button" class="primary" onclick="createPost()">Share post</button><p class="muted">Cloud post uploads are not connected yet. Demo posts stay on this device.</p></section>
 <section id="reels" class="page"><h2>Ghost Reels</h2><div class="reel"><div class="reel-mark">👻</div><b>YOUR NEXT REEL STARTS HERE</b><p>Video hosting will be added with Firebase Storage.</p></div></section>
-<section id="profile" class="page"><div class="profile-head"><div class="avatar big">G</div><div><h2 id="profileName">Your profile</h2><span class="muted" id="profileEmail"></span></div></div><div class="stats"><div><b id="postCount">0</b><span>Posts</span></div><div><b>0</b><span>Followers</span></div><div><b>0</b><span>Following</span></div></div><input id="displayName" placeholder="Display name"><button class="primary" onclick="saveProfile()">Save profile</button><button class="logout" onclick="logout()">Log out</button><h3>Your posts</h3><div id="myPosts"></div></section>
-</section>
-</main><div id="toast" role="status"></div>
-<script type="module" src="app.js"></script>
-</body></html>
+<section id="profile" class="page"><div class="profile-head"><div class="avatar big">G</div><div><h2 id="profileName">Your profile</h2><span class="muted" id="profileEmail"></span></div></div><div class="stats"><div><b id="postCount">0</b><span>Posts</span></div><div><b>0</b><span>Followers</span></div><div><b>0</b><span>Following</span></div></div>
+<h3>Edit Profile</h3><input id="displayName" placeholder="Display name"><button type="button" class="primary" onclick="saveProfile()">Save profile</button><hr><h2>🔐 Account Security</h2><p class="muted">Manage recovery contacts for your GhostGram account.</p><h3>📧 Recovery Email</h3><input id="recoveryEmail" type="email" autocomplete="email" placeholder="Enter recovery email"><button type="button" class="primary" id="recoveryEmailButton" onclick="addRecoveryEmail()">Save Recovery Email</button><p id="emailSecurityStatus" class="muted" role="status"></p><p class="tiny">This email is stored in your private account document. Saving it does not verify it or enable password reset.</p><hr><h3>📱 Recovery Phone Number</h3><input id="recoveryPhone" type="tel" autocomplete="tel" placeholder="+91XXXXXXXXXX"><div id="phoneRecaptcha"></div><button type="button" class="primary" id="sendOTPButton" onclick="sendPhoneCode()">Send OTP</button><input id="phoneOTP" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit OTP" hidden><button type="button" class="primary" id="verifyPhoneButton" onclick="verifyPhoneCode()" hidden>Verify Phone</button><p id="phoneSecurityStatus" class="muted" role="status"></p><p class="tiny">Phone verification depends on Firebase Phone Authentication settings and SMS availability.</p><hr><button type="button" class="logout" onclick="logout()">Log out</button><h3>Your posts</h3><div id="myPosts"></div></section>
+</section></main><div id="toast" role="status"></div><script type="module" src="app.js"></script></body></html>
