@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -11,16 +10,11 @@
 <link rel="stylesheet" href="style.css">
 <title>GhostGram</title>
 </head>
-
 <body>
-
 <header class="top">
   <div class="brand">
     <div class="ghost">👻</div>
-    <div>
-      <b>GHOSTGRAM</b>
-      <small>YOUR WORLD. YOUR GHOST.</small>
-    </div>
+    <div><b>GHOSTGRAM</b><small>YOUR WORLD. YOUR GHOST.</small></div>
   </div>
   <div class="top-actions">
     <button type="button" onclick="toast('Notifications coming soon')">♡</button>
@@ -28,12 +22,10 @@
 </header>
 
 <main>
-
 <section id="auth" class="auth-card">
   <div class="auth-logo">👻</div>
   <h1>Welcome to <span>GhostGram</span></h1>
   <p class="muted">Your world. Your ghost.</p>
-
   <div class="auth-tabs">
     <button type="button" id="loginTab" class="selected" onclick="setAuthMode('login')">Log in</button>
     <button type="button" id="signupTab" onclick="setAuthMode('signup')">Sign up</button>
@@ -41,28 +33,23 @@
 
   <form id="authForm">
     <div id="identityWrap">
-      <label id="usernameLabel">Username</label>
+      <label id="usernameLabel" for="identity">Username</label>
       <input id="identity" autocomplete="username" placeholder="Enter your username" required>
     </div>
-
     <div id="emailWrap" hidden>
-      <label>Recovery email (optional)</label>
+      <label for="email">Recovery email (optional)</label>
       <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
     </div>
-
     <div id="usernameWrap" hidden>
-      <label>Choose a username</label>
+      <label for="newUsername">Choose a username</label>
       <input id="newUsername" autocomplete="username" minlength="3" maxlength="20" placeholder="e.g. ghost_user">
     </div>
-
-    <label>Password</label>
+    <label for="password">Password</label>
     <input id="password" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required>
-
     <div id="confirmWrap" hidden>
-      <label>Confirm password</label>
+      <label for="confirmPassword">Confirm password</label>
       <input id="confirmPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Re-enter password">
     </div>
-
     <button class="primary" id="submitAuth" type="submit">Log in</button>
   </form>
 
@@ -70,11 +57,10 @@
   <div class="or"><span>OR</span></div>
   <button type="button" class="google" onclick="googleSignIn()">◎ Continue with Google</button>
   <p id="authStatus" class="status" role="status"></p>
-  <p class="tiny">Use GhostGram respectfully. Never share your password or verification codes.</p>
+  <p class="tiny">Never share your password or verification codes.</p>
 </section>
 
 <section id="app" hidden>
-
 <nav class="tabs">
   <button type="button" class="active" data-page="home" onclick="show('home')">⌂ <span>Home</span></button>
   <button type="button" data-page="search" onclick="show('search')">⌕ <span>Explore</span></button>
@@ -84,10 +70,7 @@
 </nav>
 
 <section id="home" class="page active">
-  <div class="section-head">
-    <h2>Stories</h2>
-    <span class="green">GHOSTGRAM</span>
-  </div>
+  <div class="section-head"><h2>Stories</h2><span class="green">GHOSTGRAM</span></div>
   <div class="stories" id="stories"></div>
   <div id="feed"></div>
 </section>
@@ -106,7 +89,7 @@
   <img id="preview" class="preview" hidden alt="Photo preview">
   <textarea id="caption" placeholder="What's on your mind?"></textarea>
   <button type="button" class="primary" onclick="createPost()">Share post</button>
-  <p class="muted">Cloud post uploads are not connected yet.</p>
+  <p class="muted">Cloud post uploads are not connected yet. Demo posts stay on this device.</p>
 </section>
 
 <section id="reels" class="page">
@@ -119,15 +102,10 @@
 </section>
 
 <section id="profile" class="page">
-
   <div class="profile-head">
     <div class="avatar big">G</div>
-    <div>
-      <h2 id="profileName">Your profile</h2>
-      <span class="muted" id="profileEmail"></span>
-    </div>
+    <div><h2 id="profileName">Your profile</h2><span class="muted" id="profileEmail"></span></div>
   </div>
-
   <div class="stats">
     <div><b id="postCount">0</b><span>Posts</span></div>
     <div><b>0</b><span>Followers</span></div>
@@ -139,74 +117,34 @@
   <button type="button" class="primary" onclick="saveProfile()">Save profile</button>
 
   <hr>
-
   <h2>🔐 Account Security</h2>
-  <p class="muted">Keep your GhostGram account protected.</p>
+  <p class="muted">Manage recovery contacts for your GhostGram account.</p>
 
   <h3>📧 Recovery Email</h3>
-  <input
-    id="recoveryEmail"
-    type="email"
-    autocomplete="email"
-    placeholder="Enter recovery email"
-  >
-  <button type="button" class="primary" id="recoveryEmailButton" onclick="addRecoveryEmail()">
-    Add / Update Email
-  </button>
+  <input id="recoveryEmail" type="email" autocomplete="email" placeholder="Enter recovery email">
+  <button type="button" class="primary" id="recoveryEmailButton" onclick="addRecoveryEmail()">Save Recovery Email</button>
   <p id="emailSecurityStatus" class="muted" role="status"></p>
+  <p class="tiny">For privacy, this email is stored only in your private account document. Saving it does not verify it or enable password reset. Do not enter an email you cannot access.</p>
 
   <hr>
-
   <h3>📱 Recovery Phone Number</h3>
-  <input
-    id="recoveryPhone"
-    type="tel"
-    autocomplete="tel"
-    placeholder="+91XXXXXXXXXX"
-  >
-
+  <input id="recoveryPhone" type="tel" autocomplete="tel" placeholder="+91XXXXXXXXXX">
   <div id="phoneRecaptcha"></div>
-
-  <button type="button" class="primary" id="sendOTPButton" onclick="sendPhoneCode()">
-    Send OTP
-  </button>
-
-  <input
-    id="phoneOTP"
-    type="text"
-    inputmode="numeric"
-    autocomplete="one-time-code"
-    maxlength="6"
-    placeholder="Enter 6-digit OTP"
-    hidden
-  >
-
-  <button
-    type="button"
-    class="primary"
-    id="verifyPhoneButton"
-    onclick="verifyPhoneCode()"
-    hidden
-  >
-    Verify Phone
-  </button>
-
+  <button type="button" class="primary" id="sendOTPButton" onclick="sendPhoneCode()">Send OTP</button>
+  <input id="phoneOTP" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit OTP" hidden>
+  <button type="button" class="primary" id="verifyPhoneButton" onclick="verifyPhoneCode()" hidden>Verify Phone</button>
   <p id="phoneSecurityStatus" class="muted" role="status"></p>
+  <p class="tiny">Phone verification depends on Firebase Phone Authentication being enabled, India being allowed in SMS region settings, and available SMS quota.</p>
 
   <hr>
-
   <button type="button" class="logout" onclick="logout()">Log out</button>
-
   <h3>Your posts</h3>
   <div id="myPosts"></div>
-
 </section>
 </section>
 </main>
 
 <div id="toast" role="status"></div>
-
 <script type="module" src="app.js"></script>
-
 </body>
 </html>
