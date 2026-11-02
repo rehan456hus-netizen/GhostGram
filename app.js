@@ -8,10 +8,7 @@ import {
   signInWithPopup,
   onAuthStateChanged,
   signOut,
-  updateProfile,
-  RecaptchaVerifier,
-  PhoneAuthProvider,
-  linkWithCredential
+  updateProfile
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 
 import {
@@ -35,8 +32,6 @@ const configured = Boolean(
 const $ = id => document.getElementById(id);
 let auth = null;
 let db = null;
-let recaptchaVerifier = null;
-let phoneVerificationId = null;
 let mode = "login";
 let currentUserData = {};
 
@@ -73,14 +68,7 @@ function friendly(e) {
   if (c.includes("invalid-credential") || c.includes("wrong-password")) return "Incorrect username or password.";
   if (c.includes("popup")) return "Google sign-in popup was blocked. Allow popups and try again.";
   if (c.includes("permission-denied")) return "Firestore permission denied. Check your Firestore Rules.";
-  if (c.includes("invalid-phone-number")) return "Enter a valid phone number with country code, e.g. +91XXXXXXXXXX.";
   if (c.includes("too-many-requests")) return "Too many attempts. Please try again later.";
-  if (c.includes("captcha-check-failed")) return "reCAPTCHA failed. Refresh the page and try again.";
-  if (c.includes("credential-already-in-use")) return "This phone number is already linked to another account.";
-  if (c.includes("provider-already-linked")) return "A phone number is already linked to this account.";
-  if (c.includes("invalid-verification-code")) return "Incorrect OTP. Please check and try again.";
-  if (c.includes("quota-exceeded")) return "Firebase SMS quota has been reached. Try again later.";
-  if (c.includes("operation-not-allowed")) return "Phone sign-in is not enabled in Firebase Authentication.";
   if (c.includes("app-not-authorized")) return "This website domain is not authorized in Firebase Authentication.";
   return e?.message || "Something went wrong. Please try again.";
 }
@@ -135,6 +123,7 @@ $("authForm").addEventListener("submit", async e => {
 
   try {
     button.disabled = true;
+
     if (mode === "signup") {
       const uname = $("newUsername").value.trim().toLowerCase();
       const email = $("email").value.trim().toLowerCase();
@@ -153,7 +142,6 @@ $("authForm").addEventListener("submit", async e => {
       const cred = await createUserWithEmailAndPassword(auth, authAlias(uname), pass);
       await updateProfile(cred.user, { displayName: uname });
 
-      // Recovery email is private profile data only. It is NOT Firebase Auth email.
       await setDoc(doc(db, "users", cred.user.uid), {
         username: uname,
         recoveryEmail: email || null,
@@ -168,15 +156,22 @@ $("authForm").addEventListener("submit", async e => {
 
       setStatus("Account created. You can add or verify recovery options in Account Security.");
       await enterApp(cred.user);
+
     } else {
-      if (!/^[a-z0-9_]{3,20}$/.test(identity)) throw new Error("Enter your GhostGram username.");
+      if (!/^[a-z0-9_]{3,20}$/.test(identity)) {
+        throw new Error("Enter your GhostGram username.");
+      }
+
       const snap = await getDoc(doc(db, "usernames", identity));
       if (!snap.exists()) throw new Error("Username not found. Check your spelling.");
+
       const loginEmail = snap.data().loginEmail;
       if (!loginEmail) throw new Error("This account's login record is incomplete. Contact support.");
+
       const cred = await signInWithEmailAndPassword(auth, loginEmail, pass);
       await enterApp(cred.user);
     }
+
   } catch (err) {
     setStatus(friendly(err), true);
   } finally {
@@ -184,15 +179,18 @@ $("authForm").addEventListener("submit", async e => {
   }
 });
 
-// No false promise: recovery email is not Auth email and cannot receive Firebase reset links.
+// Password recovery information
 window.resetPassword = () => {
   const username = window.prompt("Enter your GhostGram username:");
   if (username === null) return;
+
   const clean = username.trim().toLowerCase();
+
   if (!/^[a-z0-9_]{3,20}$/.test(clean)) {
     setStatus("Enter a valid GhostGram username (3–20 letters, numbers or underscores).", true);
     return;
   }
+
   setStatus(
     "We cannot automatically reset this username-based account yet. Your saved recovery email is only a contact record, not a Firebase Auth reset address. Keep your current password safe; automatic recovery needs a secure backend.",
     true
@@ -201,7 +199,10 @@ window.resetPassword = () => {
 
 // Google sign in
 window.googleSignIn = async () => {
-  if (!configured || !auth || !db) return setStatus("Firebase setup is incomplete.", true);
+  if (!configured || !auth || !db) {
+    return setStatus("Firebase setup is incomplete.", true);
+  }
+
   try {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
@@ -211,17 +212,25 @@ window.googleSignIn = async () => {
     if (!existing.exists()) {
       const base = (result.user.displayName || "ghost")
         .toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 14) || "ghost";
+
       const uname = `${base}_${result.user.uid.slice(0, 4)}`;
       const usernameRef = doc(db, "usernames", uname);
+
       await setDoc(userRef, {
         username: uname,
         recoveryEmail: result.user.email || null,
         recoveryEmailStatus: result.user.email ? "google_account_email" : "not_added",
         createdAt: serverTimestamp()
       });
-      await setDoc(usernameRef, { uid: result.user.uid, loginEmail: result.user.email });
+
+      await setDoc(usernameRef, {
+        uid: result.user.uid,
+        loginEmail: result.user.email
+      });
     }
+
     await enterApp(result.user);
+
   } catch (e) {
     setStatus(friendly(e), true);
   }
@@ -237,19 +246,24 @@ function showAuth() {
 async function enterApp(user) {
   $("auth").hidden = true;
   $("app").hidden = false;
+
   $("profileName").textContent = user.displayName || "GhostGram user";
   $("profileEmail").textContent = user.email?.endsWith("@ghostgram.invalid")
     ? "@" + (user.displayName || "ghost")
     : (user.email || "");
+
   $("displayName").value = user.displayName || "";
 
   try {
     const snap = await getDoc(doc(db, "users", user.uid));
     currentUserData = snap.exists() ? snap.data() : {};
+
     $("recoveryEmail").value = currentUserData.recoveryEmail || "";
     $("recoveryPhone").value = user.phoneNumber || currentUserData.recoveryPhone || "";
+
     updateEmailSecurityStatus();
     updatePhoneSecurityStatus(user);
+
   } catch (e) {
     console.error("Profile/security load error:", e);
     $("emailSecurityStatus").textContent = "Could not load security details. Check your connection and Firestore Rules.";
@@ -263,6 +277,7 @@ async function enterApp(user) {
 function updateEmailSecurityStatus() {
   const email = currentUserData.recoveryEmail;
   const status = currentUserData.recoveryEmailStatus;
+
   if (!email) {
     $("emailSecurityStatus").textContent = "No recovery email saved.";
   } else if (status === "verified") {
@@ -272,17 +287,21 @@ function updateEmailSecurityStatus() {
   }
 }
 
+// Phone verification disabled because Firebase SMS billing is not enabled.
 function updatePhoneSecurityStatus(user) {
   if (user?.phoneNumber) {
-    $("phoneSecurityStatus").textContent = `Verified phone linked: ${user.phoneNumber}`;
+    $("phoneSecurityStatus").textContent =
+      `Verified phone linked: ${user.phoneNumber}`;
     $("recoveryPhone").value = user.phoneNumber;
-    $("recoveryPhone").disabled = true;
-    $("sendOTPButton").disabled = true;
   } else {
-    $("phoneSecurityStatus").textContent = "No verified phone linked.";
-    $("recoveryPhone").disabled = false;
-    $("sendOTPButton").disabled = false;
+    $("phoneSecurityStatus").textContent =
+      "Phone verification is currently unavailable. Please try again later.";
   }
+
+  $("recoveryPhone").disabled = true;
+  $("sendOTPButton").disabled = true;
+  $("phoneOTP").hidden = true;
+  $("verifyPhoneButton").hidden = true;
 }
 
 // Logout
@@ -297,10 +316,17 @@ window.logout = async () => {
 
 // Navigation
 window.show = id => {
-  document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === id));
-  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b.dataset.page === id));
+  document.querySelectorAll(".page").forEach(p =>
+    p.classList.toggle("active", p.id === id)
+  );
+
+  document.querySelectorAll(".tabs button").forEach(b =>
+    b.classList.toggle("active", b.dataset.page === id)
+  );
+
   if (id === "profile") renderProfile();
   if (id === "home") renderFeed();
+
   window.scrollTo(0, 0);
 };
 
@@ -308,15 +334,21 @@ window.show = id => {
 window.toast = message => {
   const el = $("toast");
   if (!el) return;
+
   el.textContent = message;
   el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 2200);
+
+  setTimeout(() => {
+    el.style.display = "none";
+  }, 2200);
 };
 
 // Stories
 function renderStories() {
   $("stories").innerHTML = ["Your story", "Ayaan", "Sameer", "Zoya", "Arman"]
-    .map((name, i) => `<div class="story"><div class="ring"><div class="avatar">${i ? escapeHtml(name[0]) : "＋"}</div></div>${escapeHtml(name)}</div>`)
+    .map((name, i) =>
+      `<div class="story"><div class="ring"><div class="avatar">${i ? escapeHtml(name[0]) : "＋"}</div></div>${escapeHtml(name)}</div>`
+    )
     .join("");
 }
 
@@ -341,49 +373,67 @@ function renderFeed() {
 
 window.likePost = i => {
   if (!posts[i]) return;
+
   posts[i].likes = (Number(posts[i].likes) || 0) + 1;
   localStorage.setItem("gg_posts", JSON.stringify(posts));
+
   renderFeed();
 };
 
 window.previewPhoto = e => {
   const file = e.target.files?.[0];
   if (!file) return;
+
   if (file.size > 2 * 1024 * 1024) {
     toast("Choose an image under 2 MB");
     e.target.value = "";
     return;
   }
+
   const reader = new FileReader();
+
   reader.onload = () => {
     photoData = reader.result;
     $("preview").src = photoData;
     $("preview").hidden = false;
   };
+
   reader.readAsDataURL(file);
 };
 
 window.createPost = () => {
   const caption = $("caption").value.trim();
-  if (!caption && !photoData) return toast("Add a caption or photo");
+
+  if (!caption && !photoData) {
+    return toast("Add a caption or photo");
+  }
+
   posts.unshift({
     user: auth?.currentUser?.displayName || "You",
     caption,
     img: photoData,
     likes: 0
   });
-  try { localStorage.setItem("gg_posts", JSON.stringify(posts)); } catch {}
+
+  try {
+    localStorage.setItem("gg_posts", JSON.stringify(posts));
+  } catch {}
+
   $("caption").value = "";
   $("photo").value = "";
   photoData = "";
   $("preview").src = "";
   $("preview").hidden = true;
+
   show("home");
   toast("Demo post added on this device");
 };
 
 window.searchPosts = query => {
-  const found = posts.filter(p => `${p.caption || ""} ${p.user || ""}`.toLowerCase().includes(query.toLowerCase()));
+  const found = posts.filter(p =>
+    `${p.caption || ""} ${p.user || ""}`.toLowerCase().includes(query.toLowerCase())
+  );
+
   $("searchResults").innerHTML = found.map(p =>
     `<div class="message"><b>${escapeHtml(p.user)}</b><p>${escapeHtml(p.caption)}</p></div>`
   ).join("") || "No matching posts.";
@@ -393,14 +443,26 @@ window.searchPosts = query => {
 window.saveProfile = async () => {
   const user = auth?.currentUser;
   const name = $("displayName").value.trim();
+
   if (!user) return toast("Please log in first.");
   if (!name) return toast("Enter a display name.");
+
   try {
     await updateProfile(user, { displayName: name });
-    await setDoc(doc(db, "users", user.uid), { displayName: name }, { merge: true });
+
+    await setDoc(doc(db, "users", user.uid), {
+      displayName: name
+    }, { merge: true });
+
     $("profileName").textContent = name;
-    $("profileEmail").textContent = user.email?.endsWith("@ghostgram.invalid") ? "@" + (currentUserData.username || name) : (user.email || "");
+
+    $("profileEmail").textContent =
+      user.email?.endsWith("@ghostgram.invalid")
+        ? "@" + (currentUserData.username || name)
+        : (user.email || "");
+
     toast("Profile updated");
+
   } catch (e) {
     toast(friendly(e));
   }
@@ -410,20 +472,27 @@ window.saveProfile = async () => {
 window.addRecoveryEmail = async () => {
   const user = auth?.currentUser;
   const email = $("recoveryEmail").value.trim().toLowerCase();
+
   if (!user) return toast("Please log in first.");
   if (!validEmail(email)) return toast("Enter a valid email address.");
+
   const button = $("recoveryEmailButton");
+
   try {
     button.disabled = true;
+
     await setDoc(doc(db, "users", user.uid), {
       recoveryEmail: email,
       recoveryEmailStatus: "not_verified",
       recoveryEmailUpdatedAt: serverTimestamp()
     }, { merge: true });
+
     currentUserData.recoveryEmail = email;
     currentUserData.recoveryEmailStatus = "not_verified";
+
     updateEmailSecurityStatus();
     toast("Recovery email saved privately");
+
   } catch (e) {
     $("emailSecurityStatus").textContent = friendly(e);
   } finally {
@@ -431,86 +500,32 @@ window.addRecoveryEmail = async () => {
   }
 };
 
-// Phone OTP: sends an SMS and links the verified number to the signed-in account.
-function clearRecaptcha() {
-  if (recaptchaVerifier) {
-    try { recaptchaVerifier.clear(); } catch {}
-    recaptchaVerifier = null;
-  }
-}
+// Phone OTP is disabled. No SMS request is made.
+window.sendPhoneCode = () => {
+  $("phoneSecurityStatus").textContent =
+    "Phone verification is currently unavailable. Please try again later.";
 
-window.sendPhoneCode = async () => {
-  const user = auth?.currentUser;
-  const phone = $("recoveryPhone").value.trim();
-  if (!user) return toast("Please log in first.");
-  if (user.phoneNumber) return toast("A verified phone is already linked to this account.");
-  if (!/^\+[1-9]\d{7,14}$/.test(phone)) return toast("Use country code format, e.g. +91XXXXXXXXXX.");
-
-  const button = $("sendOTPButton");
-  try {
-    button.disabled = true;
-    $("phoneSecurityStatus").textContent = "Preparing phone verification...";
-    clearRecaptcha();
-    recaptchaVerifier = new RecaptchaVerifier(auth, "phoneRecaptcha", {
-      size: "normal",
-      callback: () => { $("phoneSecurityStatus").textContent = "reCAPTCHA completed. Requesting OTP..."; },
-      "expired-callback": () => { $("phoneSecurityStatus").textContent = "reCAPTCHA expired. Tap Send OTP again."; }
-    });
-    await recaptchaVerifier.render();
-
-    const provider = new PhoneAuthProvider(auth);
-    phoneVerificationId = await provider.verifyPhoneNumber(phone, recaptchaVerifier);
-    $("phoneOTP").hidden = false;
-    $("verifyPhoneButton").hidden = false;
-    $("phoneSecurityStatus").textContent = "OTP request sent. Check your phone and enter the 6-digit code.";
-    toast("OTP request sent");
-  } catch (e) {
-    $("phoneSecurityStatus").textContent = friendly(e);
-    clearRecaptcha();
-  } finally {
-    button.disabled = Boolean(auth?.currentUser?.phoneNumber);
-  }
+  $("recoveryPhone").disabled = true;
+  $("sendOTPButton").disabled = true;
+  $("phoneOTP").hidden = true;
+  $("verifyPhoneButton").hidden = true;
 };
 
-window.verifyPhoneCode = async () => {
-  const user = auth?.currentUser;
-  const code = $("phoneOTP").value.trim();
-  if (!user) return toast("Please log in first.");
-  if (!phoneVerificationId) return toast("First request an OTP.");
-  if (!/^\d{6}$/.test(code)) return toast("Enter the 6-digit OTP.");
+window.verifyPhoneCode = () => {
+  $("phoneSecurityStatus").textContent =
+    "Phone verification is currently unavailable. Please try again later.";
 
-  const button = $("verifyPhoneButton");
-  try {
-    button.disabled = true;
-    const credential = PhoneAuthProvider.credential(phoneVerificationId, code);
-    const result = await linkWithCredential(user, credential);
-    await setDoc(doc(db, "users", result.user.uid), {
-      recoveryPhone: result.user.phoneNumber,
-      phoneVerified: true,
-      phoneVerifiedAt: serverTimestamp()
-    }, { merge: true });
-
-    $("phoneOTP").value = "";
-    $("phoneOTP").hidden = true;
-    $("verifyPhoneButton").hidden = true;
-    $("recoveryPhone").value = result.user.phoneNumber || "";
-    $("recoveryPhone").disabled = true;
-    $("sendOTPButton").disabled = true;
-    $("phoneSecurityStatus").textContent = `Phone verified and linked: ${result.user.phoneNumber}`;
-    phoneVerificationId = null;
-    clearRecaptcha();
-    toast("Phone verified successfully");
-  } catch (e) {
-    $("phoneSecurityStatus").textContent = friendly(e);
-  } finally {
-    button.disabled = false;
-  }
+  $("phoneOTP").hidden = true;
+  $("verifyPhoneButton").hidden = true;
 };
 
 // Profile
 function renderProfile() {
   const username = auth?.currentUser?.displayName;
-  $("postCount").textContent = posts.filter(p => p.user === username).length;
+
+  $("postCount").textContent =
+    posts.filter(p => p.user === username).length;
+
   $("myPosts").innerHTML = posts.filter(p => p.user === username)
     .map(p => `<div class="message">${escapeHtml(p.caption)}</div>`)
     .join("") || '<p class="muted">Your posts will appear here.</p>';
@@ -519,7 +534,11 @@ function renderProfile() {
 // HTML safety for text inserted into markup.
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
   }[char]));
 }
 
