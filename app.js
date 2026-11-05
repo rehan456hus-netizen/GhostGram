@@ -43,6 +43,7 @@ let db = null;
 let mode = "login";
 let currentUserData = {};
 let posts = [];
+let photoData = null;
 let postsUnsubscribe = null;
 
 function setStatus(message, error = false) {
@@ -194,7 +195,6 @@ $("authForm").addEventListener("submit", async e => {
         createdAt: serverTimestamp()
       });
 
-      // Public username mapping contains UID only.
       await setDoc(usernameRef, {
         uid: cred.user.uid
       });
